@@ -8,9 +8,9 @@ from torch.nn import functional as F, init
 torch.manual_seed(1337)
 batch_size = 32
 block_size = 8
-max_iters = 3000
-eval_interval = 300
-learning_rate = 1e-2
+max_iters = 5000
+eval_interval = 500
+learning_rate = 1e-3
 device = "cuda" if torch.cuda.is_available() else "cpu"
 eval_iters = 200
 n_embed = 32
@@ -36,7 +36,7 @@ def tokenizer(tokenizer_type):
         itos = {i: ch for i, ch in enumerate(chars)}
         encode = lambda s: [stoi[c] for c in s]
         decode = lambda l: "".join([itos[i] for i in l])
-    return encode, decode
+    return encode, decode  # returns the encode and decode function
 
 
 encode, decode = tokenizer("basic")
@@ -72,6 +72,7 @@ def estimate_loss():
     return out
 
 
+# Attention Head
 class Head(nn.Module):
     def __init__(self, head_size):
         super().__init__()
@@ -88,14 +89,16 @@ class Head(nn.Module):
         wei = (
             q @ k.transpose(-2, -1) * C**-0.5
         )  # (B, T, C) @ (B, C, T) --> (B, T, T) --> scaled attention
-        wei = wei.masked_fill(self.tril[:T, :T] == 0, float("-inf"))  # (B, T, T)
+        wei = wei.masked_fill(
+            self.tril[:T, :T] == 0, float("-inf")
+        )  # (B, T, T) # tril doesnt communicate with the past as for a decoder module
         wei = F.softmax(wei, dim=-1)  # (B, T, T)
         v = self.value(x)
         out = wei @ v
         return out
 
 
-# our simple bigram model
+# Our simple bigram model
 class BigramLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
