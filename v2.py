@@ -123,16 +123,32 @@ class FeedForward(nn.Module):
         return self.net(x)
 
 
+# blocks of decoders
+class Block(nn.Module):
+    def __init__(self, n_embed, n_head):
+        # n_embed = embedding dimension; n_head = number of heads we'd like
+        super().__init__()
+        head_size = n_embed // n_head
+        self.sa = MultiHeadAttention(n_head, head_size)
+        self.ffwd = FeedForward(n_embed)
+
+    def forward(self, x):
+        x = self.sa(x)
+        x = self.ffwd(x)
+        return x
+
+
 # Our simple bigram model
 class BigramLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
         self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
         self.position_embedding_table = nn.Embedding(block_size, n_embed)
-        self.sa_head = MultiHeadAttention(
-            4, n_embed // 4
-        )  # 4 heads of 8 dimensional self-attention # similar to grouped convolution
-        self.ffwd = FeedForward(n_embed)
+        self.blocks = nn.Sequential(
+            Block(n_embed, n_head=4),
+            Block(n_embed, n_head=4),
+            Block(n_embed, n_head=4),
+        )
         self.lm_head = nn.Linear(n_embed, vocab_size)
 
     def forward(self, idx, targets=None):
