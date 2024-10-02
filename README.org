@@ -3,7 +3,7 @@
 * Introduction
 This is a detailed tutorial on building onyl the decoder part of GPT from scratch using the excellant teaching from Andrej Karpathy's tutorial. The video can be found [[https://youtu.be/kCc8FmEb1nY?si=xg4GPkEuiDhzYV1W][here]].
 * Notes
-Below are a few notes from the lecture:
+Below are a few notes from the lecture as I went through the study.
 ** Data
 - The data is from the tiny shakespeare dataset that can be downloaded using this [[https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt][link]].
   #+begin_src sh
@@ -14,13 +14,15 @@ wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakesp
 - To build a GPT decoder that can generate these characters *meaningfully*.
 - Some resources:
   1) [[https://arxiv.org/pdf/1706.03762][Attention is all you need paper]]
-  2) [[https://github.com/openai/tiktoken][tiktoken]]
-  3) [[https://pytorch.org/][PyTorch]]
+  2) [[https://arxiv.org/pdf/1512.03385][Deep Residual Learning for Image Recognition]]
+  3) [[https://www.cs.toronto.edu/~rsalakhu/papers/srivastava14a.pdf][Dropout: A Simple Way to Prevent Neural Networks from Overfitting]]
+  4) [[https://github.com/openai/tiktoken][tiktoken]]
+  5) [[https://pytorch.org/][PyTorch]]
 ** Tokenizer
 - We are going to use a basic character level tokenizer where each unique character is set to a single number.
-- Another robust alternative is to use the tiktoken package by OpenAI
+- Another robust alternative is to use the tiktoken package by OpenAI.
 ** BigramLanguageModel
-- The first step to building our GPT is to create a bigram language model. Once we get preliminary results, we can build upon it by adding the attention mechanism described in the paper with: self attention, multiheaded attention, etc
+- The first step to building our GPT is to create a bigram language model. Once we get preliminary results, we can build upon it by adding the attention mechanism described in the paper with: self attention, multiheaded attention, etc.
 ** Mathematical Trick for Attention mechanism
 - To create relation between the tokens we have to create data such that it understands or percieves information from its previous values. Therefore, we can do this by creating affinities between the current token and its previous ones to generate the next possible token.
 - We do this by creating a lower triangular matric and calculating the averages in the first dimension.
@@ -54,8 +56,19 @@ out = wei @ x
 print(out.shape)
   #+end_src
 ** Scaled Self-Attention
-- The formula is:
-  $Attention(Q, K, V)=softmax\left(\frac{QK^{T}}{\sqrt{d_{k}}}\right)V$
+- The formula is: $Attention(Q, K, V)=softmax(\frac{QK^{T}}{\sqrt{d_{k}}})V$
+- The $wei$ variance is $\frac{1}{head_size}$. $wei$ should be fairly diffused such that the variance of $wei$ is 1. This helps softmax to be more diffused and not peak for specific values which is undesirable.
+** Multiheaded attention
+- Applying multiple attention blocks in parallel just like how group convolution is implemented for convolution tasks
+** Residual skip connections
+- Having a deep neural net suffer from optimization issues. Therefore, we use residual connections.
+** Layer Normalization
+- Similar to batch normalization.
+- Across the layer, there is unit gaussian distribution (mean:0; Std:1) for every single neuron.
+- Done by normalizing the rows.
+** Dropout
+- Switching off random neurons for better learning and reducing overfitting of the model.
+- These dropouts can be added before the residual connection.
 * Replicating Results
 #+begin_src sh
 step 0: train loss 4.2849, val loss 4.2823
@@ -64,12 +77,13 @@ step 1000: train loss 1.5952, val loss 1.7717
 step 1500: train loss 1.4378, val loss 1.6373
 step 2000: train loss 1.3408, val loss 1.5718
 step 2500: train loss 1.2787, val loss 1.5323
- step 3000: train loss 1.2268, val loss 1.5078
+step 3000: train loss 1.2268, val loss 1.5078
 step 3500: train loss 1.1830, val loss 1.4894
 step 4000: train loss 1.1454, val loss 1.4883
 step 4500: train loss 1.1099, val loss 1.4837
 
-
+SAMPLE OUTPUT
+____________________
 SLY:
 Sir.
 
@@ -98,4 +112,5 @@ Do there?
 
 CATESBY:
 Yet your life strong upon
+____________________
 #+end_src
