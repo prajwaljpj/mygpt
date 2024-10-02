@@ -1,0 +1,55 @@
+#+title: Code GPT from scratch (by Andrej Karpathy)
+
+* Introduction
+This is a detailed tutorial on building onyl the decoder part of GPT from scratch using the excellant teaching from Andrej Karpathy's tutorial. The video can be found [[https://youtu.be/kCc8FmEb1nY?si=xg4GPkEuiDhzYV1W][here]].
+* Notes
+Below are a few notes from the lecture:
+** Data
+- The data is from the tiny shakespeare dataset that can be downloaded using this [[https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt][link]].
+  #+begin_src sh
+wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt
+  #+end_src
+- The text contains $1115394$ characters.
+** Goal
+- To build a GPT decoder that can generate these characters *meaningfully*.
+- Some resources:
+  1) [[https://arxiv.org/pdf/1706.03762][Attention is all you need paper]]
+  2) [[https://github.com/openai/tiktoken][tiktoken]]
+  3) [[https://pytorch.org/][PyTorch]]
+** Tokenizer
+- We are going to use a basic character level tokenizer where each unique character is set to a single number.
+- Another robust alternative is to use the tiktoken package by OpenAI
+** BigramLanguageModel
+- The first step to building our GPT is to create a bigram language model. Once we get preliminary results, we can build upon it by adding the attention mechanism described in the paper with: self attention, multiheaded attention, etc
+** Mathematical Trick for Attention mechanism
+- To create relation between the tokens we have to create data such that it understands or percieves information from its previous values. Therefore, we can do this by creating affinities between the current token and its previous ones to generate the next possible token.
+- We do this by creating a lower triangular matric and calculating the averages in the first dimension.
+  #+begin_src python
+# toy example
+torch.manual_seed(42)
+# batch, time, channels
+a = torch.tril(torch.ones(3,3))
+a = a / torch.sum(a, 1, keepdim=True)
+b = torch.randint(0, 10, (3,2)).float()
+c = a @ b
+print(a)
+print(b)
+print(c)
+  #+end_src
+- This can be more elegantly implemented as below:
+  #+begin_src python
+import torch
+torch.manual_seed(1337)
+B, T, C = 4, 8, 32
+x = torch.randn(B, T, C)
+tril = torch.tril(torch.ones(T, T))
+print(tril)
+wei = torch.zeros((T, T))
+print(wei)
+wei = wei.masked_fill(tril == 0, float('-inf'))
+print(wei)
+wei = F.softmax(wei, dim=-1)
+print(wei)
+out = wei @ x
+print(out.shape)
+  #+end_src
