@@ -53,3 +53,49 @@ print(wei)
 out = wei @ x
 print(out.shape)
   #+end_src
+** Scaled Self-Attention
+- The formula is:
+  $Attention(Q, K, V)=softmax\left(\frac{QK^{T}}{\sqrt{d_{k}}}\right)V$
+* Replicating Results
+#+begin_src sh
+step 0: train loss 4.2849, val loss 4.2823
+step 500: train loss 2.0005, val loss 2.0872
+step 1000: train loss 1.5952, val loss 1.7717
+step 1500: train loss 1.4378, val loss 1.6373
+step 2000: train loss 1.3408, val loss 1.5718
+step 2500: train loss 1.2787, val loss 1.5323
+ step 3000: train loss 1.2268, val loss 1.5078
+step 3500: train loss 1.1830, val loss 1.4894
+step 4000: train loss 1.1454, val loss 1.4883
+step 4500: train loss 1.1099, val loss 1.4837
+
+
+SLY:
+Sir.
+
+KING RICHARD III:
+He so.
+
+BUSHY:
+Meantimes, well met! what Warwick true?
+
+GREMIO:
+Peternoxy too,--
+Why, didst thou do well not do, it?
+
+SAMPSON:
+Your fries.
+What comes hither?
+
+CLARENCE:
+Why?
+
+SAMPSON:
+Hald you Dory, sister.
+
+DUKE VINCENTIO:
+Do there?
+
+CATESBY:
+Yet your life strong upon
+#+end_src
