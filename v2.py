@@ -110,6 +110,19 @@ class MultiHeadAttention(nn.Module):
         )  # concatenate over the channel dimension
 
 
+# Position-wise feedforward network
+class FeedForward(nn.Module):
+    def __init__(self, n_embed):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_embed, n_embed),
+            nn.ReLU(),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
 # Our simple bigram model
 class BigramLanguageModel(nn.Module):
     def __init__(self):
@@ -119,6 +132,7 @@ class BigramLanguageModel(nn.Module):
         self.sa_head = MultiHeadAttention(
             4, n_embed // 4
         )  # 4 heads of 8 dimensional self-attention # similar to grouped convolution
+        self.ffwd = FeedForward(n_embed)
         self.lm_head = nn.Linear(n_embed, vocab_size)
 
     def forward(self, idx, targets=None):
@@ -129,6 +143,7 @@ class BigramLanguageModel(nn.Module):
         )  # (T, C)
         x = tok_emb + pos_emb  # (B, T, C) because broadcasting happens to the pos_emb
         x = self.sa_head(x)  # apply one round of self attention head
+        x = self.ffwd(x)
         logits = self.lm_head(x)  # (Batch, Time, Channel)
 
         if targets is None:
