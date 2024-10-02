@@ -103,11 +103,14 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, num_heads, head_size):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
+        self.proj = nn.Linear(n_embed, n_embed)
 
     def forward(self, x):
-        return torch.cat(
+        out = torch.cat(
             [h(x) for h in self.heads], dim=-1
         )  # concatenate over the channel dimension
+        out = self.proj(out)
+        return out
 
 
 # Position-wise feedforward network
@@ -115,8 +118,13 @@ class FeedForward(nn.Module):
     def __init__(self, n_embed):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(n_embed, n_embed),
+            nn.Linear(
+                n_embed, 4 * n_embed
+            ),  # inner layer is multiplied by 4 in the position-wise feedforward network
             nn.ReLU(),
+            nn.Linear(
+                4 * n_embed, n_embed
+            ),  # inner layer is multiplied by 4 in the position-wise feedforward network
         )
 
     def forward(self, x):
@@ -133,8 +141,8 @@ class Block(nn.Module):
         self.ffwd = FeedForward(n_embed)
 
     def forward(self, x):
-        x = self.sa(x)
-        x = self.ffwd(x)
+        x = x + self.sa(x)  #  "+" represents residual connections
+        x = x + self.ffwd(x)  # "+" represents residual connections
         return x
 
 
@@ -158,8 +166,7 @@ class BigramLanguageModel(nn.Module):
             torch.arange(T, device=device)
         )  # (T, C)
         x = tok_emb + pos_emb  # (B, T, C) because broadcasting happens to the pos_emb
-        x = self.sa_head(x)  # apply one round of self attention head
-        x = self.ffwd(x)
+        x = self.blocks(x)  # apply all the decoder blocks
         logits = self.lm_head(x)  # (Batch, Time, Channel)
 
         if targets is None:
